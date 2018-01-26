@@ -1,0 +1,4 @@
+jsonpath-rw-ext>=1.0.0
+jsonschema>=2.5.1
+pyjsonselect>=0.2.2
+robotframework>=3.0.1
