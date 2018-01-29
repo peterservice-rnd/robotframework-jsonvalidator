@@ -25,6 +25,7 @@ class JsonValidator(object):
     == Dependencies ==
     | jsonschema | https://pypi.python.org/pypi/jsonschema |
     | jsonpath-rw-ext | https://pypi.python.org/pypi/jsonpath-rw-ext |
+    | objectpath | https://pypi.python.org/pypi/objectpath/ |
     | pyjsonselect | https://pypi.python.org/pypi/pyjsonselect |
 
     == Example of use ==
