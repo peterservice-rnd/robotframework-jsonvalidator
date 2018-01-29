@@ -4,7 +4,7 @@
 
 ## Short Description
 
-[Robot Framework](http://www.robotframework.org) library for JSON validating based on JSONSchema, JSONPath, JSONSelect.
+[Robot Framework](http://www.robotframework.org) library for JSON validation based on JSONSchema, JSONPath, JSONSelect.
 
 ## Additional Information
 

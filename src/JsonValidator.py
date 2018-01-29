@@ -11,7 +11,7 @@ from jsonpath_rw.parser import DatumInContext, Index, Fields
 
 class JsonValidator(object):
     """
-    Library for JSON validating.
+    Library for JSON validation.
     Based on: JSONSchema, JSONPath, JSONSelect.
 
     == Additional Information ==
@@ -73,11 +73,11 @@ class JsonValidator(object):
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def _validate_json(self, checked_json, schema):
-        """ Validating JSON according to JSONSchema
+        """ Validate JSON according to JSONSchema
 
         *Args*:\n
         _checked_json_: validated JSON.
-        _schema_: schema that used for validating.
+        _schema_: schema that used for validation.
         """
         try:
             jsonschema.validate(checked_json, schema)
@@ -87,8 +87,7 @@ in schema {1}:
 {2}
 On instance {3}:
 {4}""".format(e.validator,
-              list(e.relative_schema_path)[:-1],
-              pprint.pformat(e.schema),
+              list(e.relative_schema_path)[:-1], pprint.pformat(e.schema),
               "[%s]" % "][".join(repr(index) for index in e.absolute_path),
               pprint.pformat(e.instance).encode('utf-8')))
             raise JsonValidatorError("Failed validating json by schema")
@@ -97,7 +96,7 @@ On instance {3}:
 
     def validate_jsonschema_from_file(self, json_string, path_to_schema):
         """
-        Validating JSON according to schema, loaded from a file.
+        Validate JSON according to schema, loaded from a file.
 
         *Args:*\n
         _json_string_ - JSON string;\n
@@ -124,7 +123,7 @@ On instance {3}:
 
     def validate_jsonschema(self, json_string, input_schema):
         """
-        Validating JSON according to schema.
+        Validate JSON according to schema.
 
         *Args:*\n
         _json_string_ - JSON string;\n
@@ -366,7 +365,8 @@ On instance {3}:
         results = path.find(json_dict)
 
         if len(results) is 0:
-            raise JsonValidatorError("Nothing found in the dictionary {0} using the given path {1}".format(str(json_dict), str(expr)))
+            raise JsonValidatorError("Nothing found in the dictionary {0} using the given path {1}".format(
+                str(json_dict), str(expr)))
 
         return results
 
@@ -414,7 +414,7 @@ On instance {3}:
     def pretty_print_json(self, json_string):
         """
         Return formatted JSON string _json_string_.\n
-        Method json.dumps with _indent=2, ensure_ascii=False_ setting is used.
+        Using method json.dumps with settings: _indent=2, ensure_ascii=False_.
 
         *Args:*\n
         _json_string_ - JSON string.
