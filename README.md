@@ -15,6 +15,14 @@
 - [JSONSelect](http://jsonselect.org/)
 - [JSONSelect Tester](http://jsonselect.curiousconcept.com/)
 
+## Installation
+
+Install the library from PyPI using pip:
+
+```
+pip install robotframework-jsonvalidator
+```
+
 ## Dependencies
 
 - [jsonschema](https://pypi.python.org/pypi/jsonschema)
