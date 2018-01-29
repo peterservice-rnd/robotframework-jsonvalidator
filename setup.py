@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Framework :: Robot Framework :: Library',
     ],
-    keywords='testing robotframework JSON JSONSchema JSONPath JSONSelect',
+    keywords='testing robotframework json jsonschema jsonpath jsonselect',
     package_dir={'': 'src'},
     py_modules=['JsonValidator'],
     install_requires=requirements,
