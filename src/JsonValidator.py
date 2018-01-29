@@ -59,7 +59,7 @@ class JsonValidator(object):
     |          "color": "red",
     |          "price": 19.95
     |        }
-    |  }
+    |    }
     | }
 
     | *Settings* | *Value* |
