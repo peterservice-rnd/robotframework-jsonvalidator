@@ -247,7 +247,7 @@ On instance {3}:
         """
         Return list of elements from _json_string_, matching [ http://jsonselect.org/ | JSONSelect] expression.
 
-        *DEPRECATED* Язык запросов JSON Select query language is outdated and not supported any more.
+        *DEPRECATED* JSON Select query language is outdated and not supported any more.
         Use other keywords of this library to query JSON.
 
         *Args:*\n
@@ -304,7 +304,7 @@ On instance {3}:
         """
         Check the existence of one or more elements, matching [ http://jsonselect.org/ | JSONSelect] expression.
 
-        *DEPRECATED* Язык запросов JSON Select query language is outdated and not supported any more.
+        *DEPRECATED* JSON Select query language is outdated and not supported any more.
         Use other keywords of this library to query JSON.
 
         *Args:*\n
@@ -331,7 +331,7 @@ On instance {3}:
         """
         Check that one or more elements, matching [ http://jsonselect.org/ | JSONSelect] expression, don't exist.
 
-        *DEPRECATED* Язык запросов JSON Select query language is outdated and not supported any more.
+        *DEPRECATED* JSON Select query language is outdated and not supported any more.
         Use other keywords of this library to query JSON.
 
         *Args:*\n
