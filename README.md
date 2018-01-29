@@ -1,6 +1,10 @@
 # robotframework-jsonvalidator
 
-Robot Framework library for JSON validating based on JSONSchema, JSONPath, JSONSelect.
+[![Build Status](https://travis-ci.org/peterservice-rnd/robotframework-jsonvalidator.svg?branch=master)](https://travis-ci.org/peterservice-rnd/robotframework-jsonvalidator)
+
+## Short Description
+
+[Robot Framework](http://www.robotframework.org) library for JSON validating based on JSONSchema, JSONPath, JSONSelect.
 
 ## Additional Information
 
