@@ -87,7 +87,7 @@ Example
 
 Robot Framework test case:
 
-.. code:: robot
+.. code:: robotframework
 
     *** Settings ***
     Library    JsonValidator
