@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import json
-import jsonschema
 import pprint
+from typing import Any, Dict, List, Optional, Union
+
+import jsonschema
 import jsonselect
 import objectpath
 from jsonpath_rw_ext import parse
-from jsonpath_rw.parser import DatumInContext, Index, Fields
+from jsonpath_rw.jsonpath import DatumInContext, Fields, Index, JSONPath
+
+JsonType = Union[Dict[str, Any], List[Dict[str, Any]]]  # noqa: E993
 
 
 class JsonValidator(object):
@@ -72,12 +76,30 @@ class JsonValidator(object):
 
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def _validate_json(self, checked_json, schema):
+    def __init__(self) -> None:
+        """ Initialization. """
+        self._parser_cache: Dict[str, JSONPath] = {}
+
+    def _parse(self, expr: str) -> JSONPath:
+        """
+        Parse JSONPath expression and store it into the cache.
+
+        *Args:*\n
+            _expr_ - JSONPath expression;
+
+        *Returns:*\n
+            Parsed JSONPath expression.
+        """
+        if expr not in self._parser_cache:
+            self._parser_cache[expr] = parse(expr)
+        return self._parser_cache[expr]
+
+    def _validate_json(self, checked_json: JsonType, schema: Dict[str, Any]) -> None:
         """ Validate JSON according to JSONSchema
 
         *Args*:\n
-        _checked_json_: validated JSON.
-        _schema_: schema that used for validation.
+            _checked_json_: validated JSON.
+            _schema_: schema that used for validation.
         """
         try:
             jsonschema.validate(checked_json, schema)
@@ -92,18 +114,18 @@ On instance {3}:
               pprint.pformat(e.instance).encode('utf-8')))
             raise JsonValidatorError("Failed validating json by schema")
         except jsonschema.SchemaError as e:
-            raise JsonValidatorError('Json-schema error')
+            raise JsonValidatorError(f'Json-schema error: {e}')
 
-    def validate_jsonschema_from_file(self, json_string, path_to_schema):
+    def validate_jsonschema_from_file(self, json_source: Union[str, JsonType], path_to_schema: str) -> None:
         """
         Validate JSON according to schema, loaded from a file.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _path_to_schema_ - path to file with JSON schema;
+            _json_source_ - JSON data structure;\n
+            _path_to_schema_ - path to file with JSON schema;
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -111,8 +133,9 @@ On instance {3}:
         | *Test Cases* | *Action* | *Argument* | *Argument* |
         | Simple | Validate jsonschema from file  |  {"foo":bar}  |  ${CURDIR}${/}schema.json |
         """
-        schema = open(path_to_schema).read()
-        load_input_json = self.string_to_json(json_string)
+        with open(path_to_schema) as f:
+            schema = f.read()
+        load_input_json = self.convert_to_json(json_source)
 
         try:
             load_schema = json.loads(schema)
@@ -121,16 +144,16 @@ On instance {3}:
 
         self._validate_json(load_input_json, load_schema)
 
-    def validate_jsonschema(self, json_string, input_schema):
+    def validate_jsonschema(self, json_source: Union[str, JsonType], input_schema: str) -> None:
         """
         Validate JSON according to schema.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _input_schema_ - schema in string format;
+            _json_source_ - JSON data structure;\n
+            _input_schema_ - schema in string format;
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -140,7 +163,7 @@ On instance {3}:
         | Simple | ${schema}=   | OperatingSystem.Get File |   ${CURDIR}${/}schema_valid.json |
         |  | Validate jsonschema  |  {"foo":bar}  |  ${schema} |
         """
-        load_input_json = self.string_to_json(json_string)
+        load_input_json = self.convert_to_json(json_source)
 
         try:
             load_schema = json.loads(input_schema)
@@ -149,18 +172,34 @@ On instance {3}:
 
         self._validate_json(load_input_json, load_schema)
 
-    def string_to_json(self, source):
+    def convert_to_json(self, json_source: Union[str, JsonType]) -> JsonType:
+        """Convert a python object to JsonType.
+
+        Args:
+            json_source: source object to convert.
+
+        Returns:
+            JSON structure.
+        """
+        if isinstance(json_source, str):
+            return self.string_to_json(json_source)
+        elif isinstance(json_source, (dict, list)):
+            return json_source
+        else:
+            raise JsonValidatorError(f'Invalid type of source_json: {type(json_source)}')
+
+    def string_to_json(self, source: str) -> JsonType:
         """
         Deserialize string into JSON structure.
 
         *Args:*\n
-        _source_ - JSON string
+            _source_ - JSON string
 
         *Returns:*\n
-        JSON structure
+            JSON structure
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -176,21 +215,21 @@ On instance {3}:
         try:
             load_input_json = json.loads(source)
         except ValueError as e:
-            raise JsonValidatorError("Could not parse '%s' as JSON: %s" % (source, e))
+            raise JsonValidatorError(f"Could not parse '{source}' as JSON: {e}")
         return load_input_json
 
-    def json_to_string(self, source):
+    def json_to_string(self, source: JsonType) -> str:
         """
         Serialize JSON structure into string.
 
         *Args:*\n
-        _source_ - JSON structure
+            _source_ - JSON structure
 
         *Returns:*\n
-        JSON string
+            JSON string
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -206,19 +245,19 @@ On instance {3}:
         try:
             load_input_json = json.dumps(source)
         except ValueError as e:
-            raise JsonValidatorError("Could serialize '%s' to JSON: %s" % (source, e))
+            raise JsonValidatorError(f"Could serialize '{source}' to JSON: {e}")
         return load_input_json
 
-    def get_elements(self, json_string, expr):
+    def get_elements(self, json_source: Union[str, JsonType], expr: str) -> Optional[List[Any]]:
         """
-        Get list of elements from _json_string_, matching [http://goessner.net/articles/JsonPath/|JSONPath] expression.
+        Get list of elements from _json_source_, matching [http://goessner.net/articles/JsonPath/|JSONPath] expression.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - JSONPath expression;
+            _json_source_ - JSON data structure;\n
+            _expr_ - JSONPath expression;
 
         *Returns:*\n
-        List of found elements or ``None`` if no elements were found
+            List of found elements or ``None`` if no elements were found
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -230,9 +269,9 @@ On instance {3}:
         =>\n
         | [u'Nigel Rees', u'Evelyn Waugh', u'Herman Melville', u'J. R. R. Tolkien']
         """
-        load_input_json = self.string_to_json(json_string)
+        load_input_json = self.convert_to_json(json_source)
         # parsing jsonpath
-        jsonpath_expr = parse(expr)
+        jsonpath_expr = self._parse(expr)
         # list of returned elements
         value_list = []
         for match in jsonpath_expr.find(load_input_json):
@@ -242,19 +281,19 @@ On instance {3}:
         else:
             return value_list
 
-    def select_elements(self, json_string, expr):
+    def select_elements(self, json_source: Union[str, JsonType], expr: str) -> Optional[List[Any]]:
         """
-        Return list of elements from _json_string_, matching [ http://jsonselect.org/ | JSONSelect] expression.
+        Return list of elements from _json_source_, matching [ http://jsonselect.org/ | JSONSelect] expression.
 
         *DEPRECATED* JSON Select query language is outdated and not supported any more.
         Use other keywords of this library to query JSON.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - JSONSelect expression;
+            _json_source_ - JSON data structure;\n
+            _expr_ - JSONSelect expression;
 
         *Returns:*\n
-        List of found elements or ``None`` if no elements were found
+            List of found elements or ``None`` if no elements were found
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -266,22 +305,22 @@ On instance {3}:
         =>\n
         | 12.99
         """
-        load_input_json = self.string_to_json(json_string)
+        load_input_json = self.convert_to_json(json_source)
         # parsing jsonselect
         match = jsonselect.match(sel=expr, obj=load_input_json)
         ret = list(match)
         return ret if ret else None
 
-    def select_objects(self, json_string, expr):
+    def select_objects(self, json_source: Union[str, JsonType], expr: str) -> Optional[List[Any]]:
         """
-        Return list of elements from _json_string_, matching [ http://objectpath.org// | ObjectPath] expression.
+        Return list of elements from _json_source_, matching [ http://objectpath.org// | ObjectPath] expression.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - ObjectPath expression;
+            _json_source_ - JSON data structure;\n
+            _expr_ - ObjectPath expression;
 
         *Returns:*\n
-        List of found elements. If no elements were found, empty list will be returned
+            List of found elements. If no elements were found, empty list will be returned
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -293,13 +332,13 @@ On instance {3}:
         =>\n
         | [12.99]
         """
-        load_input_json = self.string_to_json(json_string)
+        load_input_json = self.convert_to_json(json_source)
         # parsing objectpath
         tree = objectpath.Tree(load_input_json)
         values = tree.execute(expr)
         return list(values)
 
-    def element_should_exist(self, json_string, expr):
+    def element_should_exist(self, json_source: Union[str, JsonType], expr: str) -> None:
         """
         Check the existence of one or more elements, matching [ http://jsonselect.org/ | JSONSelect] expression.
 
@@ -307,11 +346,11 @@ On instance {3}:
         Use other keywords of this library to query JSON.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - JSONSelect expression;\n
+            _json_source_ - JSON data structure;\n
+            _expr_ - JSONSelect expression;\n
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -322,11 +361,11 @@ On instance {3}:
         | | Element should exist  |  ${json_example}  |  .author:contains("Evelyn Waugh") |
         | | Element should exist  |  ${json_example}  |  .store .book  .price:expr(x=8.95) |
         """
-        value = self.select_elements(json_string, expr)
+        value = self.select_elements(json_source, expr)
         if value is None:
-            raise JsonValidatorError('Elements %s does not exist' % expr)
+            raise JsonValidatorError(f'Elements {expr} does not exist')
 
-    def element_should_not_exist(self, json_string, expr):
+    def element_should_not_exist(self, json_source: Union[str, JsonType], expr: str) -> None:
         """
         Check that one or more elements, matching [ http://jsonselect.org/ | JSONSelect] expression, don't exist.
 
@@ -334,54 +373,54 @@ On instance {3}:
         Use other keywords of this library to query JSON.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - JSONSelect expression;\n
+            _json_source_ - JSON data structure;\n
+            _expr_ - JSONSelect expression;\n
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
         """
-        value = self.select_elements(json_string, expr)
+        value = self.select_elements(json_source, expr)
         if value is not None:
-            raise JsonValidatorError('Elements %s exist but should not' % expr)
+            raise JsonValidatorError(f'Elements {expr} exist but should not')
 
-    def _json_path_search(self, json_dict, expr):
+    def _json_path_search(self, json_dict: JsonType, expr: str) -> List[DatumInContext]:
         """
         Scan JSON dictionary with using json-path passed sting of the format of $.element..element1[index] etc.
 
         *Args:*\n
-        _json_dict_ - JSON dictionary;\n
-        _expr_ - string of fuzzy search for items within the directory;\n
+            _json_dict_ - JSON dictionary;\n
+            _expr_ - string of fuzzy search for items within the directory;\n
 
         *Returns:*\n
-        List of DatumInContext objects:
-        ``[DatumInContext(value=..., path=..., context=[DatumInContext])]``
-        - value - found value
-        - path  - value selector inside context.value (in implementation of jsonpath-rw: class Index or Fields)
+            List of DatumInContext objects:
+            ``[DatumInContext(value=..., path=..., context=[DatumInContext])]``
+            - value - found value
+            - path  - value selector inside context.value (in implementation of jsonpath-rw: class Index or Fields)
 
         *Raises:*\n
-        JsonValidatorError
+            JsonValidatorError
         """
-        path = parse(expr)
+        path = self._parse(expr)
         results = path.find(json_dict)
 
-        if len(results) is 0:
-            raise JsonValidatorError("Nothing found in the dictionary {0} using the given path {1}".format(
-                str(json_dict), str(expr)))
+        if len(results) == 0:
+            raise JsonValidatorError(f"Nothing found in the dictionary {json_dict} using the given path {expr}")
 
         return results
 
-    def update_json(self, json_string, expr, value, index=0):
+    def update_json(self, json_source: Union[str, JsonType], expr: str, value: Any,
+                    index: Union[int, str] = 0) -> JsonType:
         """
-        Replace the value in the JSON string.
+        Replace the value in the JSON structure.
 
         *Args:*\n
-        _json_string_ - JSON string;\n
-        _expr_ - JSONPath expression for determining the value to be replaced;\n
-        _value_ - the value to be replaced with;\n
-        _index_ - index for selecting item within a match list, default value is 0;\n
+            _json_source_ - JSON data structure;\n
+            _expr_ - JSONPath expression for determining the value to be replaced;\n
+            _value_ - the value to be replaced with;\n
+            _index_ - index for selecting item within a match list, default value is 0;\n
 
         *Returns:*\n
-        Changed JSON in dictionary format.
+            Changed JSON in dictionary format.
 
         *Example:*\n
         | *Settings* | *Value* |
@@ -391,7 +430,7 @@ On instance {3}:
         | Update element | ${json_example}=   | OperatingSystem.Get File |   ${CURDIR}${/}json_example.json |
         | | ${json_update}= | Update_json  |  ${json_example}  |  $..color  |  changed |
         """
-        load_input_json = self.string_to_json(json_string)
+        load_input_json = self.convert_to_json(json_source)
         matches = self._json_path_search(load_input_json, expr)
 
         datum_object = matches[int(index)]
@@ -411,16 +450,16 @@ On instance {3}:
 
         return load_input_json
 
-    def pretty_print_json(self, json_string):
+    def pretty_print_json(self, json_string: str) -> str:
         """
         Return formatted JSON string _json_string_.\n
         Using method json.dumps with settings: _indent=2, ensure_ascii=False_.
 
         *Args:*\n
-        _json_string_ - JSON string.
+            _json_string_ - JSON string.
 
         *Returns:*\n
-        Formatted JSON string.
+            Formatted JSON string.
 
         *Example:*\n
         | *Settings* | *Value* |

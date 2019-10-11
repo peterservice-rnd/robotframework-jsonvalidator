@@ -16,7 +16,7 @@ with open(path.join(here, 'requirements.txt')) as f:
 
 setup(
     name='robotframework-jsonvalidator',
-    version='1.0.1',
+    version='2.0.0',
     description='A Robot Framework JSON Validator Library',
     long_description=long_description,
     url='https://github.com/peterservice-rnd/robotframework-jsonvalidator',
@@ -28,8 +28,6 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Testing',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Framework :: Robot Framework :: Library',
